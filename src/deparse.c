@@ -536,8 +536,8 @@ foreign_expr_walker(Node *node,
 			return false;
 
 		/* Only non-split aggregates are pushable. */
-		if (agg->aggsplit != AGGSPLIT_SIMPLE)
-			return false;
+		//if (agg->aggsplit != AGGSPLIT_SIMPLE)
+		//	return false;
 
 		/* As usual, it must be shippable. */
 		if (!chfdw_is_shippable(agg->aggfnoid, ProcedureRelationId, fpinfo, NULL))

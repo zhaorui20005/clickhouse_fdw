@@ -4,6 +4,7 @@ project(clickhouse_fdw VERSION 1.3.0 LANGUAGES C)
 set(CMAKE_COLOR_MAKEFILE ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
+set(CMAKE_BUILD_TYPE Debug)
 message(STATUS "Setting ${CMAKE_PROJECT_NAME} build type - ${CMAKE_BUILD_TYPE}")
 
 #------------------------------------------------------------------------------
