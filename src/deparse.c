@@ -170,7 +170,7 @@ static void deparseAggref(Aggref *node, deparse_expr_cxt *context);
 static void appendGroupByClause(List *tlist, deparse_expr_cxt *context);
 static void appendAggOrderBy(List *orderList, List *targetList,
 				 deparse_expr_cxt *context);
-static CustomObjectDef *appendFunctionName(Oid funcid, deparse_expr_cxt *context);
+static CustomObjectDef *appendFunctionName(Oid funcid, deparse_expr_cxt *context, uint8 *brcount);
 static Node *deparseSortGroupClause(Index ref, List *tlist, bool force_colno,
 					   deparse_expr_cxt *context);
 static void deparseCoerceViaIO(CoerceViaIO *node, deparse_expr_cxt *context);
@@ -2358,7 +2358,7 @@ deparseFuncExpr(FuncExpr *node, deparse_expr_cxt *context)
 	/*
 	 * Normal function: display as proname(args).
 	 */
-	cdef = appendFunctionName(node->funcid, context);
+	cdef = appendFunctionName(node->funcid, context, NULL);
 	if (cdef && cdef->cf_type == CF_DATE_TRUNC)
 	{
 		Const *arg = (Const *) linitial(node->args);
@@ -3315,7 +3315,7 @@ deparseAggref(Aggref *node, deparse_expr_cxt *context)
 
 	/* Find aggregate name from aggfnoid which is a pg_proc entry */
 	cdef = context->func;
-	context->func = appendFunctionName(node->aggfnoid, context);
+	context->func = appendFunctionName(node->aggfnoid, context, &brcount);
 
 	/* 'If' part */
 	if (context->func && context->func->cf_type == CF_SIGN_COUNT && !node->aggstar)
@@ -3762,7 +3762,7 @@ appendLimitClause(deparse_expr_cxt *context)
  *		Returns was custom or not.
  */
 static CustomObjectDef *
-appendFunctionName(Oid funcid, deparse_expr_cxt *context)
+appendFunctionName(Oid funcid, deparse_expr_cxt *context, uint8 *brcount)
 {
 	StringInfo	buf = context->buf;
 	HeapTuple	proctup;
@@ -3812,9 +3812,16 @@ appendFunctionName(Oid funcid, deparse_expr_cxt *context)
 		}
 	}
 
-	/* Always print the function name */
-	appendStringInfoString(buf, proname);
-
+	if (strcmp(proname, "avg") == 0 && fpinfo->table->exec_location == FTEXECLOCATION_ALL_SEGMENTS) {
+		appendStringInfoString(buf, "array(toInt64(count(*)), sum");
+		if (brcount) {
+			*brcount += 1;
+		}
+	} else {
+		/* Always print the function name */
+		appendStringInfoString(buf, proname);
+	}
+	
 	ReleaseSysCache(proctup);
 
 	return cdef;
